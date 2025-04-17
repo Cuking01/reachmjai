@@ -1,7 +1,7 @@
 #include <torch/torch.h>
 #include <iostream>
 
-constexpr int d = 10;  // 输入/隐藏层维度
+constexpr int d = 5;  // 输入/隐藏层维度
 
 // 小网络定义
 struct SmallNetImpl : torch::nn::Module {
