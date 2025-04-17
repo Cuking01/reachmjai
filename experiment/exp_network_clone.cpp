@@ -15,16 +15,18 @@ struct SmallNet : torch::nn::Module {
         fc2 = register_module("fc2", torch::nn::Linear(d, d));
         fc3 = register_module("fc3", torch::nn::Linear(d, 1));
         reset_parameters();
+        for (auto& param : this->parameters()) {
+        param.set_requires_grad(false);
     }
 
     void reset_parameters() {
         // 自定义权重初始化
         torch::nn::init::kaiming_normal_(fc1->weight, 0.0, torch::kFanIn, torch::kReLU);
-        fc1->weight.mul_(2.0);
+        fc1->weight = fc1->weight.mul(2.0);
         torch::nn::init::uniform_(fc1->bias, -0.1, 0.2);
 
         torch::nn::init::kaiming_normal_(fc2->weight, 0.0, torch::kFanIn, torch::kReLU);
-        fc2->weight.mul_(2.0);
+        fc2->weight = fc2->weight.mul(2.0);
         torch::nn::init::uniform_(fc2->bias, -0.1, 0.2);
 
         torch::nn::init::kaiming_normal_(fc3->weight);
@@ -89,7 +91,7 @@ int main() {
         loss.backward();
         optimizer.step();
 
-        if (epoch % 100 == 0) {
+        if (epoch % 1 == 0) {
             std::cout << "Epoch [" << epoch << "/" << epochs 
                       << "], Loss: " << loss.item<float>() << std::endl;
         }
