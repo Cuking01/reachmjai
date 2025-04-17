@@ -86,7 +86,7 @@ int main() {
     torch::optim::Adam optimizer(big_net->parameters(), lr);
 
     for (int epoch = 1; epoch <= epochs; ++epoch) {
-        float loss;
+
         // === 训练阶段 ===
         {
             // 生成新的训练数据
@@ -95,16 +95,13 @@ int main() {
 
             // 前向传播
             auto output = big_net->forward(train_inputs);
-            loss = torch::mse_loss(output, train_targets);
+            auto loss = torch::mse_loss(output, train_targets);
 
             // 反向传播
             optimizer.zero_grad();
             loss.backward();
             optimizer.step();
-        }
 
-        // === 验证阶段 ===
-        if (epoch % 1 == 0) {
             torch::NoGradGuard no_grad;
             
             // 生成独立验证数据
@@ -120,6 +117,7 @@ int main() {
                       << "\tTraining Loss: " << loss.item<float>() 
                       << "\tValidation Loss: " << val_loss.item<float>() << std::endl;
         }
+
     }
     return 0;
 }
