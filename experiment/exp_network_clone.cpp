@@ -78,7 +78,7 @@ int main() {
 
     // 初始化网络
     auto small_net = std::make_shared<SmallNet>();
-    auto big_net = std::make_shared<LargeNet>();
+    auto big_net = std::make_shared<LargeNet>(d,1,k,n);
     small_net->to(device);
     big_net->to(device);
 
