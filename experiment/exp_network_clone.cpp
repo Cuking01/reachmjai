@@ -68,35 +68,57 @@ struct LargeNet : torch::nn::Module {
 };
 
 int main() {
-    // 设备选择
-    torch::Device device(torch::kCPU);
 
-    // 生成训练数据
+    // 配置参数
+    const float lr = 0.001;
+    const int eval_samples = 1024;  // 验证数据量
+
+    // 设备设置
+    auto device = torch::kCUDA; // 或 torch::kCPU
+
+    // 初始化网络
     auto small_net = std::make_shared<SmallNet>();
-    auto inputs = torch::rand({batch_size, d}, device) * 2 - 1;  // [-1, 1]均匀分布
-    auto targets = small_net->forward(inputs).detach();  // 确保不计算梯度
+    auto big_net = std::make_shared<BigNet>();
+    small_net->to(device);
+    big_net->to(device);
 
-    // 初始化大网络
-    auto large_net = std::make_shared<LargeNet>(d, 1, k, n);
-    large_net->to(device);
+    // 优化器设置
+    torch::optim::Adam optimizer(big_net->parameters(), lr);
 
-    // 优化器和损失函数
-    torch::optim::Adam optimizer(large_net->parameters(), 0.001);
-    auto criterion = torch::nn::MSELoss();
-
-    // 训练循环
     for (int epoch = 1; epoch <= epochs; ++epoch) {
-        optimizer.zero_grad();
-        auto outputs = large_net->forward(inputs);
-        auto loss = criterion(outputs, targets);
-        loss.backward();
-        optimizer.step();
+        // === 训练阶段 ===
+        {
+            // 生成新的训练数据
+            auto train_inputs = torch::randn({batch_size, d}, device).requires_grad_(false);
+            auto train_targets = small_net->forward(train_inputs).detach();
 
+            // 前向传播
+            auto output = big_net->forward(train_inputs);
+            auto loss = torch::mse_loss(output, train_targets);
+
+            // 反向传播
+            optimizer.zero_grad();
+            loss.backward();
+            optimizer.step();
+        }
+
+        // === 验证阶段 ===
         if (epoch % 1 == 0) {
-            std::cout << "Epoch [" << epoch << "/" << epochs 
-                      << "], Loss: " << loss.item<float>() << std::endl;
+            torch::NoGradGuard no_grad;
+            
+            // 生成独立验证数据
+            auto val_inputs = torch::randn({eval_samples, d}, device).requires_grad_(false);
+            auto val_targets = small_net->forward(val_inputs);
+            
+            // 计算验证损失
+            auto val_output = big_net->forward(val_inputs);
+            auto val_loss = torch::mse_loss(val_output, val_targets);
+
+            // 输出监控信息
+            std::cout << "Epoch [" << epoch << "/" << epochs << "]"
+                      << "\tTraining Loss: " << loss.item<float>() 
+                      << "\tValidation Loss: " << val_loss.item<float>() << std::endl;
         }
     }
-
     return 0;
 }
