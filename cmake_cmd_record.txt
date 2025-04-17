@@ -1,0 +1,2 @@
+设置libtorch的路径
+-DCMAKE_PREFIX_PATH=`python -c 'import torch;print(torch.utils.cmake_prefix_path)'`
