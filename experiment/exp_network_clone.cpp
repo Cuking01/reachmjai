@@ -68,10 +68,10 @@ struct BigNetImpl : torch::nn::Module {
     torch::Tensor forward(torch::Tensor x) {
         // 前k层使用ReLU
         for (size_t i = 0; i < layers->size() - 1; ++i) {
-            x = torch::relu(layers[i]->forward(x));
+            x = layers[i]->as<torch::nn::Linear>()->forward(x);
         }
         // 输出层不使用激活函数
-        return layers.back()->forward(x);
+        return layers[layers->size()-1]->as<torch::nn::Linear>()->forward(x);
     }
 };
 TORCH_MODULE(BigNet);
@@ -113,26 +113,28 @@ int main() {
             optimizer.zero_grad();
             loss.backward();
             optimizer.step();
+
+            // 验证阶段（每10个epoch）
+            if (epoch % 1 == 0) {
+                torch::NoGradGuard no_grad;
+                // 生成新验证数据
+                auto val_inputs = torch::empty({eval_batch_size, d}, device)
+                                    .uniform_(-1, 1)
+                                    .requires_grad_(false);
+                auto val_targets = small_net->forward(val_inputs);
+                
+                // 计算验证损失
+                auto val_output = big_net->forward(val_inputs);
+                auto val_loss = torch::mse_loss(val_output, val_targets);
+
+                std::printf("Epoch [%4d/%d]  Train Loss: %.4f  Val Loss: %.4f\n",
+                           epoch, epochs,
+                           loss.item<float>(),
+                           val_loss.item<float>());
+            }
         }
 
-        // 验证阶段（每10个epoch）
-        if (epoch % 10 == 0) {
-            torch::NoGradGuard no_grad;
-            // 生成新验证数据
-            auto val_inputs = torch::empty({eval_batch_size, d}, device)
-                                .uniform_(-1, 1)
-                                .requires_grad_(false);
-            auto val_targets = small_net->forward(val_inputs);
-            
-            // 计算验证损失
-            auto val_output = big_net->forward(val_inputs);
-            auto val_loss = torch::mse_loss(val_output, val_targets);
-
-            std::printf("Epoch [%4d/%d]  Train Loss: %.4f  Val Loss: %.4f\n",
-                       epoch, epochs,
-                       loss.item<float>(),
-                       val_loss.item<float>());
-        }
+        
     }
 
     return 0;
