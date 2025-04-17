@@ -16,7 +16,8 @@ struct SmallNet : torch::nn::Module {
         fc3 = register_module("fc3", torch::nn::Linear(d, 1));
         reset_parameters();
         for (auto& param : this->parameters()) {
-        param.set_requires_grad(false);
+            param.set_requires_grad(false);
+        }
     }
 
     void reset_parameters() {
