@@ -1,141 +1,71 @@
 #include <torch/torch.h>
 #include <iostream>
+#include <math.h>
 
-constexpr int d = 5;  // 输入/隐藏层维度
 
-// 小网络定义
-struct SmallNetImpl : torch::nn::Module {
-    torch::nn::Linear fc1{nullptr}, fc2{nullptr}, fc3{nullptr};
+float std_init_range(int n,int m)
+{
+    return sqrtf(6.0f/(n+m));
+}
 
-    SmallNetImpl() {
-        fc1 = register_module("fc1", torch::nn::Linear(d, d));
-        fc2 = register_module("fc2", torch::nn::Linear(d, d));
-        fc3 = register_module("fc3", torch::nn::Linear(d, 1));
-        reset_parameters();
+
+struct FCN : torch::nn::Module {
+    torch::nn::Linear fc1{nullptr}, fc2{nullptr};
+
+    FCN(int d1,int d2,int d3) {
+        fc1 = register_module("fc1", torch::nn::Linear(d1, d2));
+        fc2 = register_module("fc2", torch::nn::Linear(d2, d3));
+        init_linear(fc1,d1,d2);
+        init_linear(fc2,d2,d3);
     }
 
-    void reset_parameters() {
-        // 权重初始化（Kaiming初始化后乘2）
-        torch::nn::init::kaiming_normal_(fc1->weight, 0.0, torch::kFanIn, torch::kReLU);
-        fc1->weight.set_data(fc1->weight * 2.0);  // 非原地操作
-        torch::nn::init::uniform_(fc1->bias, -0.1, 0.2);
-        
-        torch::nn::init::kaiming_normal_(fc2->weight, 0.0, torch::kFanIn, torch::kReLU);
-        fc2->weight.set_data(fc2->weight * 2.0);
-        torch::nn::init::uniform_(fc2->bias, -0.1, 0.2);
-        
-        torch::nn::init::kaiming_normal_(fc3->weight);
-        torch::nn::init::zeros_(fc3->bias);
-
-        // 禁用所有梯度
-        for (auto& param : parameters()) {
-            param.set_requires_grad(false);
-        }
+    static void init_linear(torch::nn::Linear&fc,int in,int out)
+    {
+        float w=std_init_range(in,out);
+        torch::nn::init::uniform_(fc->weight,-w,w);
+        //fc1->weight.set_data(fc1->weight * 2.0);
+        torch::nn::init::uniform_(fc->bias, -0.1, 0.2);
     }
 
     torch::Tensor forward(torch::Tensor x) {
         x = torch::relu(fc1->forward(x));
-        x = torch::relu(fc2->forward(x));
-        return fc3->forward(x);
+        return fc2->forward(x);
     }
 };
-TORCH_MODULE(SmallNet);
 
-// 大网络定义
-struct BigNetImpl : torch::nn::Module {
-    torch::nn::ModuleList layers;
-    int k;  // 隐藏层数量
-    int n;  // 每层神经元数
 
-    BigNetImpl(int k = 3, int n = 64) : k(k), n(n) {
-        // 输入层
-        layers->push_back(torch::nn::Linear(d, n));
-        
-        // 隐藏层
-        for (int i = 0; i < k; ++i) {
-            layers->push_back(torch::nn::Linear(n, n));
-        }
-        
-        // 输出层
-        layers->push_back(torch::nn::Linear(n, 1));
-        
-        // 注册所有子模块
-        for (size_t i = 0; i < layers->size(); ++i) {
-            register_module("layer" + std::to_string(i), layers[i]);
-        }
-    }
 
-    torch::Tensor forward(torch::Tensor x) {
-        // 前k层使用ReLU
-        for (size_t i = 0; i < layers->size() - 1; ++i) {
-            x = layers[i]->as<torch::nn::Linear>()->forward(x);
-        }
-        // 输出层不使用激活函数
-        return layers[layers->size()-1]->as<torch::nn::Linear>()->forward(x);
-    }
-};
-TORCH_MODULE(BigNet);
+int main()
+{
+    int input_size=2,output_size=2;
+    float lr=0.001;
 
-int main() {
-    // 配置参数
-    const int epochs = 1000;
-    const int batch_size = 512;
-    const int eval_batch_size = 1024;
-    const float lr = 0.001;
-    const torch::Device device(torch::kCUDA);  // 或 torch::kCPU
+    FCN target(input_size,2,output_size);
+    FCN f(input_size,2,output_size);
+    int batch_size=10;
+    
+    torch::nn::MSELoss mse;
 
-    // 初始化网络
-    SmallNet small_net;
-    BigNet big_net(4, 128);  // 4个隐藏层，每层128个神经元
-    small_net->to(device);
-    big_net->to(device);
+    target.to(torch::kCUDA);
+    f.to(torch::kCUDA);
 
-    // 优化器
-    torch::optim::Adam optimizer(big_net->parameters(), lr);
+    for(int i=0;i<1000;i++)
+    {
+        torch::Tensor x=torch::randn({batch_size,input_size}).to(torch::kCUDA);
+        torch::Tensor y=target.forward(x);
+        torch::Tensor yp=f.forward(x);
+        torch::Tensor loss=mse(y,yp);
 
-    // 训练循环
-    for (int epoch = 1; epoch <= epochs; ++epoch) {
-        // 训练阶段
+        f.zero_grad();
+        loss.backward();
+
+        lr*=0.999;
+
+        for(auto&para:f.parameters())
         {
-            // 生成新的训练数据（输入范围[-1, 1)）
-            auto train_inputs = torch::empty({batch_size, d}, device)
-                                  .uniform_(-1, 1)
-                                  .requires_grad_(false);
-            
-            // 生成目标输出
-            auto train_targets = small_net->forward(train_inputs).detach();
-
-            // 前向传播
-            auto output = big_net->forward(train_inputs);
-            auto loss = torch::mse_loss(output, train_targets);
-
-            // 反向传播
-            optimizer.zero_grad();
-            loss.backward();
-            optimizer.step();
-
-            // 验证阶段（每10个epoch）
-            if (epoch % 1 == 0) {
-                torch::NoGradGuard no_grad;
-                // 生成新验证数据
-                auto val_inputs = torch::empty({eval_batch_size, d}, device)
-                                    .uniform_(-1, 1)
-                                    .requires_grad_(false);
-                auto val_targets = small_net->forward(val_inputs);
-                
-                // 计算验证损失
-                auto val_output = big_net->forward(val_inputs);
-                auto val_loss = torch::mse_loss(val_output, val_targets);
-
-                std::printf("Epoch [%4d/%d]  Train Loss: %.4f  Val Loss: %.4f\n",
-                           epoch, epochs,
-                           loss.item<float>(),
-                           val_loss.item<float>());
-            }
+            para.data()=para.data()-lr*para.grad();
         }
 
-        
+        printf("epoch=%4d loss=%.4f\n",i,loss.item<float>());
     }
-
-    return 0;
 }
