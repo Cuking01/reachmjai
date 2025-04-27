@@ -41,7 +41,7 @@ int main()
     float lr=0.01;
 
     FCN target(input_size,1000,output_size);
-    FCN f(input_size,1000,output_size);
+    FCN f(input_size,8000,output_size);
     int batch_size=10;
     
     torch::nn::MSELoss mse;
@@ -49,7 +49,7 @@ int main()
     target.to(torch::kCUDA);
     f.to(torch::kCUDA);
 
-    for(int i=0;i<100;i++)
+    for(int i=0;i<10000;i++)
     {
         torch::Tensor x=torch::randn({batch_size,input_size}).to(torch::kCUDA);
         torch::Tensor y=target.forward(x);
@@ -59,7 +59,7 @@ int main()
         f.zero_grad();
         loss.backward();
 
-        lr*=0.99;
+        lr*=0.999;
 
         for(auto&para:f.parameters())
         {
