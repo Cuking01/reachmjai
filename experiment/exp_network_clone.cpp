@@ -38,10 +38,10 @@ struct FCN : torch::nn::Module {
 int main()
 {
     int input_size=2,output_size=2;
-    float lr=0.001;
+    float lr=0.01;
 
     FCN target(input_size,2,output_size);
-    FCN f(input_size,2,output_size);
+    FCN f(input_size,4,output_size);
     int batch_size=10;
     
     torch::nn::MSELoss mse;
@@ -49,7 +49,7 @@ int main()
     target.to(torch::kCUDA);
     f.to(torch::kCUDA);
 
-    for(int i=0;i<1000;i++)
+    for(int i=0;i<10000;i++)
     {
         torch::Tensor x=torch::randn({batch_size,input_size}).to(torch::kCUDA);
         torch::Tensor y=target.forward(x);
@@ -65,7 +65,10 @@ int main()
         {
             para.data()=para.data()-lr*para.grad();
         }
-
-        printf("epoch=%4d loss=%.4f\n",i,loss.item<float>());
+        if(i%10==9)
+        {
+            printf("epoch=%4d loss=%.4f\n",i,loss.item<float>());
+        }
+        
     }
 }
