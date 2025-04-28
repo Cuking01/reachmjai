@@ -76,7 +76,7 @@ int main()
     torch::cuda::synchronize();
     int st=clock();
 
-    for(int i=0;i<10;i++)
+    for(int i=0;i<100;i++)
     {
         
         torch::Tensor y=target.forward(x);
