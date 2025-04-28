@@ -37,12 +37,12 @@ struct FCN : torch::nn::Module {
 
 int main()
 {
-    int input_size=1000,output_size=1000;
+    int input_size=2048,output_size=2048;
     float lr=0.01;
 
-    FCN target(input_size,1000,output_size);
-    FCN f(input_size,8000,output_size);
-    int batch_size=1000;
+    FCN target(input_size,2048,output_size);
+    FCN f(input_size,2048,output_size);
+    int batch_size=2048;
     
     torch::nn::MSELoss mse;
 
