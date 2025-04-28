@@ -56,21 +56,21 @@ int main()
         
         torch::Tensor y=target.forward(x);
         torch::Tensor yp=f.forward(x);
-        torch::Tensor loss=mse(y,yp);
+        // torch::Tensor loss=mse(y,yp);
 
-        f.zero_grad();
-        loss.backward();
+        // f.zero_grad();
+        // loss.backward();
 
-        lr*=0.999;
+        // lr*=0.999;
 
-        for(auto&para:f.parameters())
-        {
-            para.data()=para.data()-lr*para.grad();
-        }
-        if(i%1==0)
-        {
-            printf("epoch=%4d loss=%.4f\n",i+1,loss.item<float>());
-        }
+        // for(auto&para:f.parameters())
+        // {
+        //     para.data()=para.data()-lr*para.grad();
+        // }
+        // if(i%1==0)
+        // {
+        //     printf("epoch=%4d loss=%.4f\n",i+1,loss.item<float>());
+        // }
         
     }
 }
