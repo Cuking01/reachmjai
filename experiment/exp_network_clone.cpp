@@ -1,7 +1,7 @@
 #include <torch/torch.h>
 #include <iostream>
 #include <math.h>
-
+#include <time.h>
 
 float std_init_range(int n,int m)
 {
@@ -51,6 +51,8 @@ int main()
 
     torch::Tensor x=torch::randn({batch_size,input_size}).to(torch::kCUDA);
 
+    int st=clock();
+
     for(int i=0;i<10000;i++)
     {
         
@@ -73,4 +75,8 @@ int main()
         // }
         
     }
+
+    int end=clock();
+
+    printf("time=%d\n",end-start);
 }
