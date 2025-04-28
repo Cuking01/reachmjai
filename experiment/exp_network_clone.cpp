@@ -78,5 +78,5 @@ int main()
 
     int end=clock();
 
-    printf("time=%d\n",end-start);
+    printf("time=%d\n",end-st);
 }
