@@ -96,6 +96,7 @@ int main()
         // {
         //     printf("epoch=%4d loss=%.4f\n",i+1,loss.item<float>());
         // }
+        puts("12312");
         
     }
 
