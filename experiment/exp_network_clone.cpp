@@ -73,7 +73,7 @@ int main()
         // }
         
     }
-
+    torch::cuda::synchronize();
     int st=clock();
 
     for(int i=0;i<10;i++)
@@ -99,7 +99,7 @@ int main()
         puts("12312");
         
     }
-
+    torch::cuda::synchronize();
     int end=clock();
 
     printf("time=%d\n",end-st);
