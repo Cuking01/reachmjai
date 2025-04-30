@@ -51,6 +51,8 @@ int main()
 
     torch::Tensor x=torch::randn({batch_size,input_size}).to(torch::kCUDA);
 
+
+
     for(int i=0;i<10;i++)
     {
         
@@ -79,8 +81,9 @@ int main()
     for(int i=0;i<100;i++)
     {
         
-        torch::Tensor y=target.forward(x);
-        torch::Tensor yp=f.forward(x);
+        // torch::Tensor y=target.forward(x);
+        // torch::Tensor yp=f.forward(x);
+        torch::Tensor y=torch::matmul(x,x);
         // torch::Tensor loss=mse(y,yp);
 
         // f.zero_grad();
