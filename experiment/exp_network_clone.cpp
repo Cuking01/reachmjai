@@ -1,4 +1,5 @@
 #include <torch/torch.h>
+#include <torch/cuda.h>
 #include <iostream>
 #include <math.h>
 #include <time.h>
