@@ -53,10 +53,8 @@ int main()
     torch::Tensor x=torch::randn({batch_size,input_size}).to(torch::kCUDA);
     torch::Tensor y1=torch::randn({input_size,output_size}).to(torch::kCUDA);
     torch::Tensor y2=torch::randn({input_size,output_size}).to(torch::kCUDA);
-    using cuda_stream=torch::cuda::Stream;
-    using cs_guard=torch::cuda::StreamGuard;
-
-    cuda_stream s1=torch::cuda::getStreamFromPool(),s2=torch::cuda::getStreamFromPool();
+    
+    torch::cuda::Stream s1=torch::cuda::getStreamFromPool(),s2=torch::cuda::getStreamFromPool();
 
     for(int i=0;i<10;i++)
     {
@@ -90,12 +88,12 @@ int main()
         // torch::Tensor yp=f.forward(x);
 
         {
-            cs_guard guard(s1);
+            torch::cuda::StreamGuard guard(s1);
             y1=torch::matmul(x,x);
         }
 
         {
-            cs_guard guard(s2);
+            torch::cuda::StreamGuard guard(s2);
             y2=torch::matmul(x,x);
         }
         
