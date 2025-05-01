@@ -1,5 +1,6 @@
 #include <torch/torch.h>
-#include <torch/cuda.h>
+#include <c10/cuda/CUDAStream.h>
+#include <c10/cuda/CUDAGuard.h>
 #include <iostream>
 #include <math.h>
 #include <time.h>
@@ -54,7 +55,7 @@ int main()
     torch::Tensor y1=torch::randn({input_size,output_size}).to(torch::kCUDA);
     torch::Tensor y2=torch::randn({input_size,output_size}).to(torch::kCUDA);
     
-    at::cuda::CUDAStream s1=torch::cuda::getStreamFromPool(),s2=torch::cuda::getStreamFromPool();
+    c10::cuda::CUDAStream s1=c10::cuda::getStreamFromPool(),s2=torch::cuda::getStreamFromPool();
 
     for(int i=0;i<10;i++)
     {
@@ -88,12 +89,12 @@ int main()
         // torch::Tensor yp=f.forward(x);
 
         {
-            at::cuda::CUDAStreamGuard guard(s1);
+            c10::cuda::CUDAStreamGuard guard(s1);
             y1=torch::matmul(x,x);
         }
 
         {
-            at::cuda::CUDAStreamGuard guard(s2);
+            c10::cuda::CUDAStreamGuard guard(s2);
             y2=torch::matmul(x,x);
         }
         
