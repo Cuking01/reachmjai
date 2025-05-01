@@ -55,7 +55,7 @@ int main()
     torch::Tensor y1=torch::randn({input_size,output_size}).to(torch::kCUDA);
     torch::Tensor y2=torch::randn({input_size,output_size}).to(torch::kCUDA);
     
-    c10::cuda::CUDAStream s1=c10::cuda::getStreamFromPool(),s2=torch::cuda::getStreamFromPool();
+    c10::cuda::CUDAStream s1=c10::cuda::getStreamFromPool(),s2=c10::cuda::getStreamFromPool();
 
     for(int i=0;i<10;i++)
     {
