@@ -81,7 +81,7 @@ int main()
 
         for(auto&para:f.parameters())
         {
-            para.data()=para.data()-(lr/i/batch_size)*para.grad();
+            para.data()=para.data()-(lr/i)*para.grad();
         }
 
         torch::Tensor x = torch::randn({ batch_size, input_size });
