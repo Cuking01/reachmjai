@@ -66,23 +66,27 @@ int main()
 
     for(int i=1;i<=1000;i++)
     {
-        f.zero_grad();
-        for(int j=0;j<i;j++)
+        for(int k=0;k<3;k++)
         {
-            torch::Tensor x = torch::randn({ batch_size, input_size });
-            torch::Tensor target_output = target.forward(x);
-            torch::Tensor range_output = range.forward(x);
-            torch::Tensor sample = target_output;//sample_from_range(target_output,range_output);  // 生成采样值
-            torch::Tensor y=f.forward(x);
-            torch::Tensor loss=mse(y,sample);
+            f.zero_grad();
+            for(int j=0;j<i;j++)
+            {
+                torch::Tensor x = torch::randn({ batch_size, input_size });
+                torch::Tensor target_output = target.forward(x);
+                torch::Tensor range_output = range.forward(x);
+                torch::Tensor sample = target_output;//sample_from_range(target_output,range_output);  // 生成采样值
+                torch::Tensor y=f.forward(x);
+                torch::Tensor loss=mse(y,sample);
 
-            loss.backward();
-        }
+                loss.backward();
+            }
 
-        for(auto&para:f.parameters())
-        {
-            para.data()=para.data()-(lr/i)*para.grad();
+            for(auto&para:f.parameters())
+            {
+                para.data()=para.data()-(lr/i)*para.grad();
+            }
         }
+        
 
         torch::Tensor x = torch::randn({ batch_size, input_size });
         torch::Tensor target_output = target.forward(x);
