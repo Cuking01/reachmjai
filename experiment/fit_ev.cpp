@@ -33,6 +33,12 @@ struct FCN : torch::nn::Module {
         x = torch::relu(fc1->forward(x));
         return fc2->forward(x);
     }
+
+    void set_requires_grad_false()
+    {
+        for(auto&param:parameters)
+            param.set_requires_grad(false);
+    }
 };
 
 // 生成符合条件的随机采样值
@@ -46,13 +52,16 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
 int main()
 {
     int input_size=2,output_size=2;
-    float lr=0.01;
+    float lr=0.02;
 
     FCN target(input_size,2,output_size);
     FCN range(input_size,2,output_size);
     FCN f(input_size,10,output_size);
     int batch_size=50;
     
+    target.set_requires_grad_false();
+    range.set_requires_grad_false();
+
     torch::nn::MSELoss mse;
 
     for(int i=1;i<=1000;i++)
