@@ -52,12 +52,12 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
 int main()
 {
     int input_size=2,output_size=2;
-    float lr=0.05;
+    float lr=0.1;
 
     FCN target(input_size,2,output_size);
     FCN range(input_size,2,output_size);
-    FCN f(input_size,10,output_size);
-    int batch_size=50;
+    FCN f(input_size,16,output_size);
+    int batch_size=100;
     
     target.set_requires_grad_false();
     range.set_requires_grad_false();
