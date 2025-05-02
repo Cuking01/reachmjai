@@ -66,7 +66,7 @@ int main()
 
     for(int i=1;i<=1000;i++)
     {
-        for(int k=0;k<50;k++)
+        for(int k=0;k<100;k++)
         {
             f.zero_grad();
             for(int j=0;j<i;j++)
@@ -92,7 +92,7 @@ int main()
         torch::Tensor target_output = target.forward(x);
         torch::Tensor yp = f.forward(x);
         torch::Tensor final_loss = mse(target_output, yp);
-        printf("epoch=%4d loss=%.4f\n",i,final_loss.item<float>());
+        printf("epoch=%4d loss=%.8f\n",i,final_loss.item<float>());
         
     }
 }
