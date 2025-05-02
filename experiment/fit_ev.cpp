@@ -64,6 +64,8 @@ int main()
 
     torch::nn::MSELoss mse;
 
+
+
     for(int i=1;i<=1000;i++)
     {
         for(int k=0;k<100;k++)
@@ -74,6 +76,15 @@ int main()
                 torch::Tensor x = torch::randn({ batch_size, input_size });
                 torch::Tensor target_output = target.forward(x);
                 torch::Tensor range_output = range.forward(x);
+
+                if(k==0&&j==0)
+                {
+                    std::cout<<"target_output"<< target_output << endl;
+                    std::cout<<"range_output"<< range_output << endl;
+                    std::cout<<"rangel"<< target_output-torch::abs(range_output) << endl;
+                    std::cout<<"ranger"<< target_output+torch::abs(range_output) << endl;
+                }
+
                 torch::Tensor sample = sample_from_range(target_output,range_output);  // 生成采样值
                 torch::Tensor y=f.forward(x);
                 torch::Tensor loss=mse(y,sample);
