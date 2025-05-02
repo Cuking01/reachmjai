@@ -36,7 +36,7 @@ struct FCN : torch::nn::Module {
 
     void set_requires_grad_false()
     {
-        for(auto&param:parameters)
+        for(auto&param:parameters())
             param.set_requires_grad(false);
     }
 };
