@@ -46,12 +46,12 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
 int main()
 {
     int input_size=2,output_size=2;
-    float lr=0.01;
+    float lr=0.1;
 
     FCN target(input_size,2,output_size);
     FCN range(input_size,2,output_size);
     FCN f(input_size,10,output_size);
-    int batch_size=8192;
+    int batch_size=50;
     
     torch::nn::MSELoss mse;
 
@@ -63,7 +63,7 @@ int main()
             torch::Tensor x = torch::randn({ batch_size, input_size });
             torch::Tensor target_output = target.forward(x);
             torch::Tensor range_output = range.forward(x);
-            torch::Tensor sample = sample_from_range(target_output,range_output);  // 生成采样值
+            torch::Tensor sample = target_output;//sample_from_range(target_output,range_output);  // 生成采样值
             torch::Tensor y=f.forward(x);
             torch::Tensor loss=mse(y,sample);
 
