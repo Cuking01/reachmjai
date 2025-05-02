@@ -66,7 +66,7 @@ int main()
 
     for(int i=1;i<=1000;i++)
     {
-        for(int k=0;k<3;k++)
+        for(int k=0;k<5;k++)
         {
             f.zero_grad();
             for(int j=0;j<i;j++)
@@ -74,7 +74,7 @@ int main()
                 torch::Tensor x = torch::randn({ batch_size, input_size });
                 torch::Tensor target_output = target.forward(x);
                 torch::Tensor range_output = range.forward(x);
-                torch::Tensor sample = target_output;//sample_from_range(target_output,range_output);  // 生成采样值
+                torch::Tensor sample = sample_from_range(target_output,range_output);  // 生成采样值
                 torch::Tensor y=f.forward(x);
                 torch::Tensor loss=mse(y,sample);
 
