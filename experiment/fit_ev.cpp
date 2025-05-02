@@ -78,7 +78,7 @@ int main()
         torch::Tensor x = torch::randn({ batch_size, input_size });
         torch::Tensor target_output = target.forward(x);
         torch::Tensor yp = f.forward(x);
-        final_loss = mse(target_output, yp);
+        torch::Tensor final_loss = mse(target_output, yp);
         printf("epoch=%4d loss=%.4f\n",i,final_loss.item<float>());
         
     }
