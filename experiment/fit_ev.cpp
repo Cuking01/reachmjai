@@ -46,7 +46,7 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
 int main()
 {
     int input_size=2,output_size=2;
-    float lr=0.1;
+    float lr=0.01;
 
     FCN target(input_size,2,output_size);
     FCN range(input_size,2,output_size);
