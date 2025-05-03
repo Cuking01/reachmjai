@@ -140,7 +140,7 @@ struct Trainer
         pre_train(lr,base_batch_size);
 
 
-        auto stick=[&all_batch_num,base_batch_size]()
+        auto stick=[this,&all_batch_num,base_batch_size]()
         {
             static int64_t cnt=100;
             if(all_batch_num>cnt)
@@ -191,7 +191,7 @@ struct Trainer
 
         pre_train(lr,base_batch_size);
 
-        auto stick=[&all_batch_num,base_batch_size]()
+        auto stick=[this,&all_batch_num,base_batch_size]()
         {
             static int64_t cnt=100;
             if(all_batch_num>cnt)
