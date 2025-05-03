@@ -56,7 +56,7 @@ int main()
 
     FCN target(input_size,4,output_size);
     FCN range(input_size,4,output_size);
-    FCN f(input_size,16,output_size);
+    FCN f(input_size,32,output_size);
     int batch_size=100;
     
     target.set_requires_grad_false();
@@ -68,7 +68,7 @@ int main()
 
     for(int i=1;i<=1000;i++)
     {
-        for(int k=0;k<(i==1?3000:1);k++)
+        for(int k=0;k<(i==1?10000:1);k++)
         {
             f.zero_grad();
             for(int j=0;j<i;j++)
