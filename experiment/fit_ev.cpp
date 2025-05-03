@@ -120,7 +120,8 @@ struct Trainer
             smoothed_loss=loss*alpha+smoothed_loss*(1-alpha);
             all_batch_num+=k*base_batch_size;
 
-            printf("epoch=%d all_batch_num=%lld loss=%.8f\n",epoch_id,all_batch_num,smoothed_loss);
+            std::cout<<"epoch="<<epoch_id<<" all_batch_num="<<all_batch_num;
+            printf(" loss=%.8f\n",smoothed_loss);
 
             if(smoothed_loss<loss_target)
             {
