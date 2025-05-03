@@ -98,6 +98,7 @@ struct Trainer
     void look_real_loss(int64_t k)
     {
         float loss_sum=0;
+        torch::nn::MSELoss mse;
         for(int64_t i=0;i<k;i++)
         {
             torch::Tensor x = torch::randn({ base_batch_size, input_size });
