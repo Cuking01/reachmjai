@@ -51,11 +51,11 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
 
 int main()
 {
-    int input_size=2,output_size=2;
+    int input_size=4,output_size=4;
     float lr=0.1;
 
-    FCN target(input_size,2,output_size);
-    FCN range(input_size,2,output_size);
+    FCN target(input_size,4,output_size);
+    FCN range(input_size,4,output_size);
     FCN f(input_size,16,output_size);
     int batch_size=100;
     
@@ -68,7 +68,7 @@ int main()
 
     for(int i=1;i<=1000;i++)
     {
-        for(int k=0;k<(i==1?100:1);k++)
+        for(int k=0;k<(i==1?3000:1);k++)
         {
             f.zero_grad();
             for(int j=0;j<i;j++)
