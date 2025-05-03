@@ -95,22 +95,25 @@ struct Trainer
         }
     }
 
-    void train_to(float loss_target,float lr,int base_batch_size)
+    void look_real_loss(int64_t k)
+    {
+
+    }
+
+    void train_to(const int64_t epoch_limit,const float lr,const int base_batch_size)
     {
         torch::nn::MSELoss mse;
 
-        int64_t epoch_id=0;
         int64_t k=1;  //累加k次梯度
         int64_t all_batch_num=0;  //总的基础batch数
 
+        float smoothed_loss=0;
+        float long_history_smoothed_loss=1;
 
-        float smoothed_loss=1;
-        float best_smoothed_loss=1;
-        int64_t last_lower_loss_epoch=0;
+        static constexpr float alpha=0.05;
+        static constexpr float beta=0.01;
 
-        static constexpr float alpha=0.1;
-
-        while(1)
+        for(int64_t epoch_id=0;epoch_id<epoch_limit;)
         {
             epoch_id++;
             f.zero_grad();
@@ -118,30 +121,19 @@ struct Trainer
             update(lr,k);
 
             smoothed_loss=loss*alpha+smoothed_loss*(1-alpha);
+            long_history_smoothed_loss=loss*beta+long_history_smoothed_loss*(1-beta);
+
             all_batch_num+=k*base_batch_size;
 
             std::cout<<"epoch="<<epoch_id<<" k="<<k<<" all_batch_num="<<all_batch_num;
             printf(" loss=%.8f\n",smoothed_loss);
 
-            std::cout<<"last_lower_loss_epoch="<<last_lower_loss_epoch;
-            printf(" best_smoothed_loss=%.8f\n",best_smoothed_loss);
+            printf(" long_history_smoothed_loss=%.8f\n",long_history_smoothed_loss);
 
-            if(smoothed_loss<loss_target)
-            {
-                printf("train complete!");
-                return;
-            }
-
-            if(smoothed_loss<best_smoothed_loss)
-            {
-                best_smoothed_loss=smoothed_loss;
-                last_lower_loss_epoch=epoch_id;
-            }
-            
-            if(epoch_id-last_lower_loss_epoch>100)
+            if(smoothed_loss>long_history_smoothed_loss)
             {
                 k=std::min(k*2,int64_t(1000000));
-                last_lower_loss_epoch=epoch_id;
+                long_history_smoothed_loss*=1.1;
             }
         }
     }
@@ -164,5 +156,5 @@ int main()
 
     Trainer trainer(target,range,f,input_size,output_size);
 
-    trainer.train_to(1e-6,0.1,64);
+    trainer.train_to(10000,0.1,64);
 }
