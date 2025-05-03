@@ -118,8 +118,8 @@ struct Trainer
     {
         for(int i=0;i<3000;i++)
         {
-            get_grad(base_batch_size,1)
-            update(lr,base_batch_size);
+            get_grad(base_batch_size,1);
+            update(lr,1);
         }
     }
 
