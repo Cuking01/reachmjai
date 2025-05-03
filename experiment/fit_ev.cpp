@@ -124,7 +124,7 @@ struct Trainer
         }
     }
 
-    void train_to(const int64_t epoch_limit,const float lr,const int base_batch_size)
+    void train_for(const int64_t epoch_limit,const float lr,const int base_batch_size)
     {
         int64_t k=1;  //累加k次梯度
         int64_t all_batch_num=0;  //总的基础batch数
@@ -164,6 +164,42 @@ struct Trainer
         }
     }
 
+    void train_simple(const int64_t epoch_limit,const float lr,const int base_batch_size)
+    {
+        int64_t k=1;  //累加k次梯度
+        int64_t all_batch_num=0;  //总的基础batch数
+
+        float smoothed_loss=1;
+
+        static constexpr float alpha=0.05;
+
+        pre_train(lr,base_batch_size);
+
+        for(int64_t epoch_id=0;epoch_id<epoch_limit;)
+        {
+            epoch_id++;
+            f.zero_grad();
+            float loss=get_grad(base_batch_size,k);
+            update(lr,k);
+
+            smoothed_loss=loss*alpha+smoothed_loss*(1-alpha);
+
+            all_batch_num+=k*base_batch_size;
+
+            std::cout<<"epoch="<<epoch_id<<" k="<<k<<" all_batch_num="<<all_batch_num;
+            printf(" loss=%.8f\n",smoothed_loss);
+
+            look_real_loss(k,base_batch_size);
+
+
+
+            if(epoch_id%1000==0)
+            {
+                k=std::min(k*2,int64_t(1000000));
+            }
+        }
+    }
+
 };
 
 
@@ -182,5 +218,7 @@ int main()
 
     Trainer trainer(target,range,f,input_size,output_size);
 
-    trainer.train_to(10000,0.1,64);
+    //trainer.train_for(10000,0.1,64);
+
+    trainer.train_simple(10000,0.1,64);
 }
