@@ -67,9 +67,10 @@ struct Trainer
 
     }
 
-    float get_grad(int base_batch_size,int64_t k,torch::nn::MSELoss&mse)
+    float get_grad(int base_batch_size,int64_t k)
     {
         float loss_sum=0;
+        torch::nn::MSELoss mse;
         for(int64_t i=0;i<k;i++)
         {
             torch::Tensor x = torch::randn({ base_batch_size, input_size });
@@ -113,10 +114,17 @@ struct Trainer
         printf("*** real_loss=%.8f ***\n",loss_sum/k);
     }
 
+    void pre_train(const float lr,const int base_batch_size)
+    {
+        for(int i=0;i<3000;i++)
+        {
+            get_grad(base_batch_size,1)
+            update(lr,base_batch_size);
+        }
+    }
+
     void train_to(const int64_t epoch_limit,const float lr,const int base_batch_size)
     {
-        torch::nn::MSELoss mse;
-
         int64_t k=1;  //累加k次梯度
         int64_t all_batch_num=0;  //总的基础batch数
 
@@ -126,11 +134,13 @@ struct Trainer
         static constexpr float alpha=0.05;
         static constexpr float beta=0.01;
 
+        pre_train(lr,base_batch_size);
+
         for(int64_t epoch_id=0;epoch_id<epoch_limit;)
         {
             epoch_id++;
             f.zero_grad();
-            float loss=get_grad(base_batch_size,k,mse);
+            float loss=get_grad(base_batch_size,k);
             update(lr,k);
 
             smoothed_loss=loss*alpha+smoothed_loss*(1-alpha);
