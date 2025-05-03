@@ -193,11 +193,12 @@ struct Trainer
 
         pre_train(lr,base_batch_size);
 
-        auto stick=[this,&all_batch_num,base_batch_size]()
+        auto stick=[this,&all_batch_num,&epoch_id,base_batch_size]()
         {
             static int64_t cnt=100;
             if(all_batch_num>cnt)
             {
+                std::cout<<"epoch_id="<<epoch_id<<" all_batch_num="<<all_batch_num<<"\n";
                 look_real_loss(100,base_batch_size);
                 cnt*=2;
             }
@@ -244,7 +245,7 @@ int main()
 
     Trainer trainer(target,range,f,input_size,output_size);
 
-    trainer.train_for(3000,0.1,64);
+    trainer.train_for(2000,0.1,64);
 
     trainer.train_simple(10000,0.1,64);
 }
