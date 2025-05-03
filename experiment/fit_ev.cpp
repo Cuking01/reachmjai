@@ -97,7 +97,19 @@ struct Trainer
 
     void look_real_loss(int64_t k)
     {
+        float loss_sum=0;
+        for(int64_t i=0;i<k;i++)
+        {
+            torch::Tensor x = torch::randn({ base_batch_size, input_size });
+            torch::Tensor target_output = target.forward(x);
 
+            torch::Tensor y=f.forward(x);
+            torch::Tensor loss=mse(y,target_output);
+
+            loss_sum+=loss.item<float>();
+        }
+
+        printf("*** real_loss=%.8f ***\n",loss_sum/k);
     }
 
     void train_to(const int64_t epoch_limit,const float lr,const int base_batch_size)
@@ -129,6 +141,8 @@ struct Trainer
             printf(" loss=%.8f\n",smoothed_loss);
 
             printf(" long_history_smoothed_loss=%.8f\n",long_history_smoothed_loss);
+
+            look_real_loss(k);
 
             if(smoothed_loss>long_history_smoothed_loss)
             {
