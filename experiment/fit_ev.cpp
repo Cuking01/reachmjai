@@ -77,13 +77,13 @@ int main()
                 torch::Tensor target_output = target.forward(x);
                 torch::Tensor range_output = range.forward(x);
 
-                if(k==0&&j==0)
-                {
-                    std::cout<<"target_output"<< target_output << std::endl;
-                    std::cout<<"range_output"<< range_output << std::endl;
-                    std::cout<<"rangel"<< target_output-torch::abs(range_output) << std::endl;
-                    std::cout<<"ranger"<< target_output+torch::abs(range_output) << std::endl;
-                }
+                // if(k==0&&j==0)
+                // {
+                //     std::cout<<"target_output"<< target_output << std::endl;
+                //     std::cout<<"range_output"<< range_output << std::endl;
+                //     std::cout<<"rangel"<< target_output-torch::abs(range_output) << std::endl;
+                //     std::cout<<"ranger"<< target_output+torch::abs(range_output) << std::endl;
+                // }
 
                 torch::Tensor sample = sample_from_range(target_output,range_output);  // 生成采样值
                 torch::Tensor y=f.forward(x);
