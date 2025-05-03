@@ -220,9 +220,10 @@ struct Trainer
 
             stick();
 
-            if(epoch_id%1000==0)
+            if(epoch_id%1==0)
             {
-                k=std::min(k*2,int64_t(1000000));
+                //k=std::min(k*2,int64_t(1000000));
+                k+=1;
             }
         }
     }
