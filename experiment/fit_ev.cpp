@@ -130,6 +130,7 @@ struct Trainer
     {
         int64_t k=1;  //累加k次梯度
         int64_t all_batch_num=0;  //总的基础batch数
+        int64_t epoch_id=0;
 
         float smoothed_loss=0;
         float long_history_smoothed_loss=1;
@@ -152,7 +153,7 @@ struct Trainer
         };
 
 
-        for(int64_t epoch_id=0;epoch_id<epoch_limit;)
+        for(;epoch_id<epoch_limit;)
         {
             epoch_id++;
             f.zero_grad();
@@ -185,7 +186,7 @@ struct Trainer
     {
         int64_t k=1;  //累加k次梯度
         int64_t all_batch_num=0;  //总的基础batch数
-
+        int64_t epoch_id=0;
         float smoothed_loss=1;
 
         static constexpr float alpha=0.05;
@@ -202,7 +203,7 @@ struct Trainer
             }
         };
 
-        for(int64_t epoch_id=0;epoch_id<epoch_limit;)
+        for(;epoch_id<epoch_limit;)
         {
             epoch_id++;
             f.zero_grad();
