@@ -95,7 +95,7 @@ struct Trainer
         }
     }
 
-    void look_real_loss(int64_t k)
+    void look_real_loss(int64_t k,int base_batch_size)
     {
         float loss_sum=0;
         torch::nn::MSELoss mse;
@@ -143,7 +143,7 @@ struct Trainer
 
             printf(" long_history_smoothed_loss=%.8f\n",long_history_smoothed_loss);
 
-            look_real_loss(k);
+            look_real_loss(k,base_batch_size);
 
             if(smoothed_loss>long_history_smoothed_loss)
             {
