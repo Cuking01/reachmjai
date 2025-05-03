@@ -138,9 +138,10 @@ struct Trainer
                 last_lower_loss_epoch=epoch_id;
             }
             
-            if(epoch_id-last_lower_loss_epoch>10)
+            if(epoch_id-last_lower_loss_epoch>100)
             {
                 k=std::min(k*2,int64_t(1000000));
+                last_lower_loss_epoch=epoch_id;
             }
         }
     }
