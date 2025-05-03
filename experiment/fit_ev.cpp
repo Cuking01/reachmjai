@@ -231,7 +231,63 @@ struct Trainer
 };
 
 
-int main()
+void test_multi()
+{
+    int input_size=4,output_size=4;
+    float lr=0.1;
+
+    FCN target(input_size,4,output_size);
+    FCN range(input_size,4,output_size);
+    target.set_requires_grad_false();
+    range.set_requires_grad_false();
+
+    std::vector<FCN> f;
+
+    for(int i=0;i<10;i++)
+    {
+        f.emplace_back(input_size,32,output_size);
+    }
+
+
+    std::vector<Trainer> trainer;
+
+    for(int i=0;i<10;i++)
+    {
+        trainer.emplace_back(target,range,f[i],input_size,output_size);
+        trainer[i].train_for(1000,0.1,64);
+    }
+
+    torch::Tensor x=torch::randn({1<<15,input_size});
+
+    torch::nn::MSELoss mse;
+    torch::Tensor y=target.forward(x);
+
+    for(int i=0;i<10;i++)
+    {
+        
+        torch::Tensor yp=f[i].forward(x);
+
+        torch::Tensor loss=mse(y,yp);
+        printf("loss of f[%d]:%.8f\n",i,loss.item<float>());
+    }
+
+    torch::Tensor yp=f[0].forward(x);
+
+    for(int i=1;i<10;i++)
+    {
+        yp=yp+f[i].forward(x);
+    }
+
+    yp=0.1*yp;
+
+    torch::Tensor loss=mse(y,yp);
+
+    printf("loss of all=%.8f\n",loss.item<float>());
+
+}
+
+
+void test_one()
 {
     int input_size=4,output_size=4;
     float lr=0.1;
@@ -251,4 +307,9 @@ int main()
 
     Trainer trainer2(target,range,g,input_size,output_size);
     trainer2.train_simple(10000,0.1,64);
+}
+
+int main()
+{
+    test_multi();
 }
