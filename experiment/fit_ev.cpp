@@ -124,6 +124,8 @@ struct Trainer
         }
     }
 
+
+
     void train_for(const int64_t epoch_limit,const float lr,const int base_batch_size)
     {
         int64_t k=1;  //累加k次梯度
@@ -137,6 +139,18 @@ struct Trainer
 
         pre_train(lr,base_batch_size);
 
+
+        auto stick=[&all_batch_num,base_batch_size]()
+        {
+            static int64_t cnt=100;
+            if(all_batch_num>cnt)
+            {
+                look_real_loss(100,base_batch_size);
+                cnt*=2;
+            }
+        };
+
+
         for(int64_t epoch_id=0;epoch_id<epoch_limit;)
         {
             epoch_id++;
@@ -149,12 +163,14 @@ struct Trainer
 
             all_batch_num+=k*base_batch_size;
 
-            std::cout<<"epoch="<<epoch_id<<" k="<<k<<" all_batch_num="<<all_batch_num;
-            printf(" loss=%.8f\n",smoothed_loss);
+            // std::cout<<"epoch="<<epoch_id<<" k="<<k<<" all_batch_num="<<all_batch_num;
+            // printf(" loss=%.8f\n",smoothed_loss);
 
-            printf(" long_history_smoothed_loss=%.8f\n",long_history_smoothed_loss);
+            // printf(" long_history_smoothed_loss=%.8f\n",long_history_smoothed_loss);
 
-            look_real_loss(k,base_batch_size);
+            // look_real_loss(k,base_batch_size);
+
+            stick();
 
             if(smoothed_loss>long_history_smoothed_loss)
             {
@@ -175,6 +191,16 @@ struct Trainer
 
         pre_train(lr,base_batch_size);
 
+        auto stick=[&all_batch_num,base_batch_size]()
+        {
+            static int64_t cnt=100;
+            if(all_batch_num>cnt)
+            {
+                look_real_loss(100,base_batch_size);
+                cnt*=2;
+            }
+        };
+
         for(int64_t epoch_id=0;epoch_id<epoch_limit;)
         {
             epoch_id++;
@@ -186,12 +212,10 @@ struct Trainer
 
             all_batch_num+=k*base_batch_size;
 
-            std::cout<<"epoch="<<epoch_id<<" k="<<k<<" all_batch_num="<<all_batch_num;
-            printf(" loss=%.8f\n",smoothed_loss);
+            // std::cout<<"epoch="<<epoch_id<<" k="<<k<<" all_batch_num="<<all_batch_num;
+            // printf(" loss=%.8f\n",smoothed_loss);
 
-            look_real_loss(k,base_batch_size);
-
-
+            stick();
 
             if(epoch_id%1000==0)
             {
@@ -218,7 +242,7 @@ int main()
 
     Trainer trainer(target,range,f,input_size,output_size);
 
-    //trainer.train_for(10000,0.1,64);
+    trainer.train_for(3000,0.1,64);
 
     trainer.train_simple(10000,0.1,64);
 }
