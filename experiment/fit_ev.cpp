@@ -238,6 +238,7 @@ int main()
     FCN target(input_size,4,output_size);
     FCN range(input_size,4,output_size);
     FCN f(input_size,32,output_size);
+    FCN g(input_size,32,output_size);
     int batch_size=100;
     
     target.set_requires_grad_false();
@@ -247,5 +248,6 @@ int main()
 
     trainer.train_for(2000,0.1,64);
 
-    trainer.train_simple(10000,0.1,64);
+    Trainer trainer2(target,range,g,input_size,output_size);
+    trainer2.train_simple(10000,0.1,64);
 }
