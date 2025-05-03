@@ -123,6 +123,9 @@ struct Trainer
             std::cout<<"epoch="<<epoch_id<<" all_batch_num="<<all_batch_num;
             printf(" loss=%.8f\n",smoothed_loss);
 
+            std::cout<<"last_lower_loss_epoch="<<last_lower_loss_epoch;
+            printf(" best_smoothed_loss=%.8f\n",best_smoothed_loss);
+
             if(smoothed_loss<loss_target)
             {
                 printf("train complete!");
