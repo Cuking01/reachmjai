@@ -68,7 +68,7 @@ int main()
 
     for(int i=1;i<=1000;i++)
     {
-        for(int k=0;k<(i==1?10000:1);k++)
+        for(int k=0;k<(i==1?20000:5);k++)
         {
             f.zero_grad();
             for(int j=0;j<i;j++)
