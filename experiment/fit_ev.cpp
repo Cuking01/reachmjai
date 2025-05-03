@@ -4,6 +4,7 @@
 #include <iostream>
 #include <math.h>
 #include <time.h>
+#include <algorithm>
 
 float std_init_range(int n,int m)
 {
@@ -49,6 +50,94 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
     return low + rand * (high - low);
 }
 
+
+
+struct Trainer
+{
+    FCN&target;
+    FCN&range;
+    FCN&f;
+
+    int input_size;
+    int output_size;
+
+    Trainer(FCN&target,FCN&range,FCN&f,int input_size,int output_size):
+        target(target),range(range),f(f),input_size(input_size),output_size(output_size)
+    {
+
+    }
+
+    float get_grad(int base_batch_size,int64_t k)
+    {
+        float loss_sum=0;
+        for(int64_t i=0;i<k;i++)
+        {
+            torch::Tensor x = torch::randn({ batch_size, input_size });
+            torch::Tensor target_output = target.forward(x);
+            torch::Tensor range_output = range.forward(x);
+
+            torch::Tensor sample = sample_from_range(target_output,range_output);  // 生成采样值
+            torch::Tensor y=f.forward(x);
+            torch::Tensor loss=mse(y,sample);
+
+            loss_sum+=loss.item<float>();
+            loss.backward();
+        }
+
+        return loss_sum/k;
+    }
+
+    void update(float lr,int64_t k)
+    {
+        for(auto&para:f.parameters())
+        {
+            para.data()=para.data()-(lr/k)*para.grad();
+        }
+    }
+
+    void train_to(float loss_target,float lr,int base_batch_size)
+    {
+        torch::nn::MSELoss mse;
+
+        int64_t epoch_id=0;
+        int64_t k=1;  //累加k次梯度
+        int64_t all_batch_num=0;  //总的基础batch数
+
+
+        float smoothed_loss=1;
+        float best_smoothed_loss=1;
+        int64_t last_lower_loss_epoch=0;
+
+        static constexpr float alpha=0.1;
+
+        while(1)
+        {
+            epoch_id++;
+            f.zero_grad();
+            float loss=get_grad(base_batch_size,k);
+            update(lr,k);
+
+            smoothed_loss=loss*alpha+smoothed_loss*(1-alpha);
+            all_batch_num+=k*base_batch_size;
+
+            printf("epoch=%d all_batch_num=%lld loss=%.8f\n",epoch_id,all_batch_num,smoothed_loss);
+
+            if(smoothed_loss<best_smoothed_loss)
+            {
+                best_smoothed_loss=smoothed_loss;
+                last_lower_epoch=epoch_id;
+            }
+            
+            if(epoch_id-last_lower_loss_epoch>5)
+            {
+                k=std::min(k*2,int64_t(1000000));
+            }
+        }
+    }
+
+};
+
+
 int main()
 {
     int input_size=4,output_size=4;
@@ -62,48 +151,6 @@ int main()
     target.set_requires_grad_false();
     range.set_requires_grad_false();
 
-    torch::nn::MSELoss mse;
+    
 
-
-
-    for(int i=1;i<=1000;i++)
-    {
-        for(int k=0;k<(i==1?20000:5);k++)
-        {
-            f.zero_grad();
-            for(int j=0;j<i;j++)
-            {
-                torch::Tensor x = torch::randn({ batch_size, input_size });
-                torch::Tensor target_output = target.forward(x);
-                torch::Tensor range_output = range.forward(x);
-
-                // if(k==0&&j==0)
-                // {
-                //     std::cout<<"target_output"<< target_output << std::endl;
-                //     std::cout<<"range_output"<< range_output << std::endl;
-                //     std::cout<<"rangel"<< target_output-torch::abs(range_output) << std::endl;
-                //     std::cout<<"ranger"<< target_output+torch::abs(range_output) << std::endl;
-                // }
-
-                torch::Tensor sample = sample_from_range(target_output,range_output);  // 生成采样值
-                torch::Tensor y=f.forward(x);
-                torch::Tensor loss=mse(y,sample);
-
-                loss.backward();
-            }
-
-            for(auto&para:f.parameters())
-            {
-                para.data()=para.data()-(lr/i)*para.grad();
-            }
-        }
-        
-
-        torch::Tensor x = torch::randn({ batch_size, input_size });
-        torch::Tensor target_output = target.forward(x);
-        torch::Tensor yp = f.forward(x);
-        torch::Tensor final_loss = mse(target_output, yp);
-        printf("epoch=%4d loss=%.8f\n",i,final_loss.item<float>());
-        
-    }
 }
