@@ -67,12 +67,12 @@ struct Trainer
 
     }
 
-    float get_grad(int base_batch_size,int64_t k)
+    float get_grad(int base_batch_size,int64_t k,torch::nn::MSELoss&mse)
     {
         float loss_sum=0;
         for(int64_t i=0;i<k;i++)
         {
-            torch::Tensor x = torch::randn({ batch_size, input_size });
+            torch::Tensor x = torch::randn({ base_batch_size, input_size });
             torch::Tensor target_output = target.forward(x);
             torch::Tensor range_output = range.forward(x);
 
@@ -114,7 +114,7 @@ struct Trainer
         {
             epoch_id++;
             f.zero_grad();
-            float loss=get_grad(base_batch_size,k);
+            float loss=get_grad(base_batch_size,k,mse);
             update(lr,k);
 
             smoothed_loss=loss*alpha+smoothed_loss*(1-alpha);
@@ -122,10 +122,16 @@ struct Trainer
 
             printf("epoch=%d all_batch_num=%lld loss=%.8f\n",epoch_id,all_batch_num,smoothed_loss);
 
+            if(smoothed_loss<loss_target)
+            {
+                printf("train complete!");
+                return;
+            }
+
             if(smoothed_loss<best_smoothed_loss)
             {
                 best_smoothed_loss=smoothed_loss;
-                last_lower_epoch=epoch_id;
+                last_lower_loss_epoch=epoch_id;
             }
             
             if(epoch_id-last_lower_loss_epoch>5)
@@ -151,6 +157,7 @@ int main()
     target.set_requires_grad_false();
     range.set_requires_grad_false();
 
-    
+    Trainer trainer(target,range,f,input_size,output_size);
 
+    trainer.train_to(1e-6,0.1,64);
 }
