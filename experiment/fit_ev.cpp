@@ -118,6 +118,7 @@ struct Trainer
     {
         for(int i=0;i<3000;i++)
         {
+            f.zero_grad();
             get_grad(base_batch_size,1);
             update(lr,1);
         }
