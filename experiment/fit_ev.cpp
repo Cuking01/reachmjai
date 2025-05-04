@@ -146,7 +146,7 @@ struct Trainer
         torch::nn::MSELoss mse;
         for(int64_t i=0;i<k;i++)
         {
-            torch::Tensor x = torch::randn({ base_batch_size, input_size });
+            torch::Tensor x = torch::rand({ base_batch_size, input_size });
             torch::Tensor target_output = target.forward(x);
             torch::Tensor range_output = range.forward(x);
 
@@ -189,6 +189,18 @@ struct Trainer
 
     void pre_train(const float lr,const int base_batch_size)
     {
+        for(int i=0;i<30;i++)
+        {
+            f.zero_grad();
+            get_grad(base_batch_size,1);
+            update(5*lr,1);
+        }
+        for(int i=0;i<300;i++)
+        {
+            f.zero_grad();
+            get_grad(base_batch_size,1);
+            update(3*lr,1);
+        }
         for(int i=0;i<3000;i++)
         {
             f.zero_grad();
@@ -328,10 +340,10 @@ void test_multi()
     {
         trainer.emplace_back(target,range,f[i],input_size,output_size);
         printf("start to train %d\n",i);
-        trainer[i].train_simple(800,0.1,64);
+        trainer[i].train_simple(500,0.1,64);
     }
 
-    torch::Tensor x=torch::randn({1<<15,input_size});
+    torch::Tensor x=torch::rand({1<<18,input_size});
 
     torch::nn::MSELoss mse;
     torch::Tensor y=target.forward(x);
