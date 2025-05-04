@@ -189,7 +189,7 @@ struct Trainer
 
     void pre_train(const float lr,const int base_batch_size)
     {
-        for(int i=0;i<2000;i++)
+        for(int i=0;i<3000;i++)
         {
             f.zero_grad();
             get_grad(base_batch_size,1);
@@ -306,11 +306,11 @@ struct Trainer
 
 void test_multi()
 {
-    int input_size=4,output_size=4;
+    int input_size=2,output_size=2;
     float lr=0.1;
 
-    FCN target(input_size,4,output_size);
-    FCN range(input_size,4,output_size);
+    FCN target(input_size,2,output_size);
+    FCN range(input_size,2,output_size);
     target.set_requires_grad_false();
     range.set_requires_grad_false();
 
@@ -318,7 +318,7 @@ void test_multi()
 
     for(int i=0;i<10;i++)
     {
-        f.emplace_back(input_size,32,output_size);
+        f.emplace_back(input_size,16,output_size);
     }
 
 
@@ -328,10 +328,10 @@ void test_multi()
     {
         trainer.emplace_back(target,range,f[i],input_size,output_size);
         printf("start to train %d\n",i);
-        trainer[i].train_simple(400,0.1,64);
+        trainer[i].train_simple(2000,0.1,64);
     }
 
-    torch::Tensor x=torch::randn({1<<3,input_size});
+    torch::Tensor x=torch::randn({1<<15,input_size});
 
     torch::nn::MSELoss mse;
     torch::Tensor y=target.forward(x);
@@ -344,7 +344,7 @@ void test_multi()
         torch::Tensor loss=mse(y,yp);
         printf("loss of f[%d]:%.8f\n",i,loss.item<float>());
 
-        std::cout<<"f["<<i<<"]\n"<<yp-y;
+        //std::cout<<"f["<<i<<"]\n"<<yp-y;
 
     }
 
@@ -360,7 +360,7 @@ void test_multi()
     torch::Tensor loss=mse(y,yp);
 
     printf("loss of all=%.8f\n",loss.item<float>());
-    std::cout<<"f["<<"all"<<"]\n"<<yp-y;
+    //std::cout<<"f["<<"all"<<"]\n"<<yp-y;
 }
 
 
@@ -388,6 +388,6 @@ void test_one()
 
 int main()
 {
-    check_rand::main();
-    //test_multi();
+    //check_rand::main();
+    test_multi();
 }
