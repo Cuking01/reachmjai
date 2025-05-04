@@ -53,43 +53,59 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
 
 namespace check_rand
 {
-    #include <torch/torch.h>
-    #include <iostream>
+// 计算单个张量的方差
+double calculate_tensor_variance(const torch::Tensor& tensor) {
+    double variance = 0.0;
+    int num_elements = tensor.numel();
+    for (int i = 0; i < num_elements; ++i) {
+        double element = tensor.data_ptr<float>()[i];
+        variance += (element - 0.5) * (element - 0.5);
+    }
+    return variance / num_elements;
+}
 
-    // 计算方差
-    double calculate_variance(const std::vector<double>& means) {
-        double variance = 0.0;
-        for (double mean : means) {
-            variance += (mean - 0.5) * (mean - 0.5);
+// 计算均值向量的方差
+double calculate_mean_variance(const std::vector<double>& means) {
+    double variance = 0.0;
+    for (double mean : means) {
+        variance += (mean - 0.5) * (mean - 0.5);
+    }
+    return variance / 10.0;
+}
+
+int main() {
+    // 生成一个 10x10 的张量，仅用于确定大小
+    torch::Tensor template_tensor = torch::ones({10, 10});
+
+    // 进行十次实验
+    for (int experiment = 0; experiment < 10; ++experiment) {
+        std::vector<double> means;
+        std::vector<double> tensor_variances;
+
+        // 每次实验生成 10 个张量
+        for (int i = 0; i < 10; ++i) {
+            torch::Tensor random_tensor = torch::rand_like(template_tensor);
+            // 计算当前张量的均值
+            double mean = random_tensor.mean().item<double>();
+            means.push_back(mean);
+
+            // 计算当前张量的方差
+            double tensor_variance = calculate_tensor_variance(random_tensor);
+            tensor_variances.push_back(tensor_variance);
+
+            std::cout << "Experiment " << experiment + 1 << ", Tensor " << i + 1 << " Mean: " << mean
+                      << ", Variance: " << tensor_variance << std::endl;
         }
-        return variance / 10.0;
+
+        // 计算 10 个均值的方差
+        double mean_variance = calculate_mean_variance(means);
+
+        // 输出本次实验的均值方差
+        std::cout << "Experiment " << experiment + 1 << " Mean Variance: " << mean_variance << std::endl;
     }
 
-    int main() {
-        // 生成一个 10x10 的张量，仅用于确定大小
-        torch::Tensor template_tensor = torch::ones({10, 10});
-
-        // 进行十次实验
-        for (int experiment = 0; experiment < 10; ++experiment) {
-            std::vector<double> means;
-
-            // 每次实验生成 10 个张量
-            for (int i = 0; i < 10; ++i) {
-                torch::Tensor random_tensor = torch::rand_like(template_tensor);
-                // 计算当前张量的均值
-                double mean = random_tensor.mean().item<double>();
-                means.push_back(mean);
-            }
-
-            // 计算 10 个均值的方差
-            double variance = calculate_variance(means);
-
-            // 输出本次实验的方差
-            std::cout << "Experiment " << experiment + 1 << " Variance: " << variance << std::endl;
-        }
-
-        return 0;
-    }
+    return 0;
+}    
 };
 
 
