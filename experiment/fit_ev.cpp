@@ -258,7 +258,7 @@ void test_multi()
         trainer[i].train_simple(200,0.1,64);
     }
 
-    torch::Tensor x=torch::randn({1<<15,input_size});
+    torch::Tensor x=torch::randn({1<<3,input_size});
 
     torch::nn::MSELoss mse;
     torch::Tensor y=target.forward(x);
@@ -270,6 +270,9 @@ void test_multi()
 
         torch::Tensor loss=mse(y,yp);
         printf("loss of f[%d]:%.8f\n",i,loss.item<float>());
+
+        std::cout<<"f["<<i<<"]\n"<<yp-y;
+
     }
 
     torch::Tensor yp=f[0].forward(x);
@@ -284,7 +287,7 @@ void test_multi()
     torch::Tensor loss=mse(y,yp);
 
     printf("loss of all=%.8f\n",loss.item<float>());
-
+    std::cout<<"f["<<"all"<<"]\n"<<yp-y;
 }
 
 
