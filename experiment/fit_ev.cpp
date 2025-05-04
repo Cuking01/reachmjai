@@ -254,7 +254,8 @@ void test_multi()
     for(int i=0;i<10;i++)
     {
         trainer.emplace_back(target,range,f[i],input_size,output_size);
-        trainer[i].train_simple(1000,0.1,64);
+        printf("start to train %d\n",i);
+        trainer[i].train_simple(200,0.1,64);
     }
 
     torch::Tensor x=torch::randn({1<<15,input_size});
