@@ -380,7 +380,7 @@ void test_one()
 
     Trainer trainer(target,range,f,input_size,output_size);
 
-    trainer.train_for(2000,0.1,64);
+    trainer.train_for(800,0.1,64);
 
     Trainer trainer2(target,range,g,input_size,output_size);
     trainer2.train_simple(10000,0.1,64);
