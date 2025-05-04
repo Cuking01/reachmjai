@@ -319,7 +319,7 @@ struct Trainer
 void test_multi()
 {
     int input_size=2,output_size=2;
-    float lr=0.1;
+    float lr=0.15;
 
     FCN target(input_size,2,output_size);
     FCN range(input_size,2,output_size);
