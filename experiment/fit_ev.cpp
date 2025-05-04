@@ -116,7 +116,7 @@ struct Trainer
 
     void pre_train(const float lr,const int base_batch_size)
     {
-        for(int i=0;i<1000;i++)
+        for(int i=0;i<2000;i++)
         {
             f.zero_grad();
             get_grad(base_batch_size,1);
@@ -255,7 +255,7 @@ void test_multi()
     {
         trainer.emplace_back(target,range,f[i],input_size,output_size);
         printf("start to train %d\n",i);
-        trainer[i].train_simple(200,0.1,64);
+        trainer[i].train_simple(400,0.1,64);
     }
 
     torch::Tensor x=torch::randn({1<<3,input_size});
