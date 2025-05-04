@@ -81,6 +81,8 @@ int main() {
     for (int experiment = 0; experiment < 10; ++experiment) {
         std::vector<double> means;
         std::vector<double> tensor_variances;
+        std::vector<double> mean_deviations;
+        double total_sum = 0.0;
 
         // 每次实验生成 10 个张量
         for (int i = 0; i < 10; ++i) {
@@ -88,20 +90,34 @@ int main() {
             // 计算当前张量的均值
             double mean = random_tensor.mean().item<double>();
             means.push_back(mean);
+            total_sum += mean;
+
+            // 计算当前张量均值与期望值 0.5 的偏差
+            double deviation = mean - 0.5;
+            mean_deviations.push_back(deviation);
 
             // 计算当前张量的方差
             double tensor_variance = calculate_tensor_variance(random_tensor);
             tensor_variances.push_back(tensor_variance);
 
             std::cout << "Experiment " << experiment + 1 << ", Tensor " << i + 1 << " Mean: " << mean
-                      << ", Variance: " << tensor_variance << std::endl;
+                      << ", Variance: " << tensor_variance
+                      << ", Deviation from 0.5: " << deviation << std::endl;
         }
+
+        // 计算 10 个张量总的均值
+        double total_mean = total_sum / 10.0;
+
+        // 计算 10 个张量总均值与期望值 0.5 的偏差
+        double total_deviation = total_mean - 0.5;
 
         // 计算 10 个均值的方差
         double mean_variance = calculate_mean_variance(means);
 
-        // 输出本次实验的均值方差
-        std::cout << "Experiment " << experiment + 1 << " Mean Variance: " << mean_variance << std::endl;
+        // 输出本次实验的均值方差、10 个张量总的均值以及对应的偏差
+        std::cout << "Experiment " << experiment + 1 << " Mean Variance: " << mean_variance
+                  << ", Total Mean of 10 Tensors: " << total_mean
+                  << ", Total Deviation from 0.5: " << total_deviation << std::endl;
     }
 
     return 0;
