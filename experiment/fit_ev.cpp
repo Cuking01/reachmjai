@@ -291,7 +291,7 @@ struct Trainer
             // std::cout<<"epoch="<<epoch_id<<" k="<<k<<" all_batch_num="<<all_batch_num;
             // printf(" loss=%.8f\n",smoothed_loss);
 
-            stick();
+            //stick();
 
             if(epoch_id%10==0)
             {
@@ -328,7 +328,7 @@ void test_multi()
     {
         trainer.emplace_back(target,range,f[i],input_size,output_size);
         printf("start to train %d\n",i);
-        trainer[i].train_simple(2000,0.1,64);
+        trainer[i].train_simple(800,0.1,64);
     }
 
     torch::Tensor x=torch::randn({1<<15,input_size});
