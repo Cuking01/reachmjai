@@ -172,10 +172,10 @@ struct Trainer
     void look_real_loss(int64_t k,int base_batch_size)
     {
         float loss_sum=0;
-        torch::nn::MSELoss mse;
+        torch::nn::MSELoss mse;g
         for(int64_t i=0;i<k;i++)
         {
-            torch::Tensor x = torch::randn({ base_batch_size, input_size });
+            torch::Tensor x = torch::rand({ base_batch_size, input_size });
             torch::Tensor target_output = target.forward(x);
 
             torch::Tensor y=f.forward(x);
@@ -343,7 +343,7 @@ void test_multi()
         trainer[i].train_simple(500,0.1,64);
     }
 
-    torch::Tensor x=torch::rand({1<<24,input_size});
+    torch::Tensor x=torch::rand({1<<22,input_size});
 
     torch::nn::MSELoss mse;
     torch::Tensor y=target.forward(x);
