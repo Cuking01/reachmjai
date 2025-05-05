@@ -31,7 +31,7 @@ struct FCN : torch::nn::Module {
     }
 
     torch::Tensor forward(torch::Tensor x) {
-        x = torch::relu(fc1->forward(x));
+        x = torch::tanh(fc1->forward(x));
         return fc2->forward(x);
     }
 
