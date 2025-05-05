@@ -343,7 +343,7 @@ void test_multi()
         trainer[i].train_simple(500,0.1,64);
     }
 
-    torch::Tensor x=torch::rand({1<<18,input_size});
+    torch::Tensor x=torch::rand({1<<24,input_size});
 
     torch::nn::MSELoss mse;
     torch::Tensor y=target.forward(x);
