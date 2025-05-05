@@ -11,7 +11,7 @@ float std_init_range(int n,int m)
     return sqrtf(6.0f/(n+m));
 }
 
-
+template<auto fun=torch::relu>
 struct FCN : torch::nn::Module {
     torch::nn::Linear fc1{nullptr}, fc2{nullptr};
 
@@ -31,7 +31,7 @@ struct FCN : torch::nn::Module {
     }
 
     torch::Tensor forward(torch::Tensor x) {
-        x = torch::tanh(fc1->forward(x));
+        x = fun(fc1->forward(x));
         return fc2->forward(x);
     }
 
@@ -326,7 +326,7 @@ void test_multi()
     target.set_requires_grad_false();
     range.set_requires_grad_false();
 
-    std::vector<FCN> f;
+    std::vector<FCN<torch::tanh>> f;
 
     for(int i=0;i<10;i++)
     {
