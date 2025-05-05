@@ -345,7 +345,7 @@ void test_multi()
 
     torch::NoGradGuard no_grad;
 
-    torch::Tensor x=torch::rand({1<<24,input_size});
+    torch::Tensor x=torch::rand({1<<21,input_size});
 
     torch::nn::MSELoss mse;
     torch::Tensor y=target.forward(x);
