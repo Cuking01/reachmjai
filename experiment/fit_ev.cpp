@@ -319,7 +319,7 @@ struct Trainer
             epoch_id++;
             f.zero_grad();
             float loss=get_grad(base_batch_size,k);
-            update(lr,k);
+            update(lr*(0.3-0.002*i),k);
         }
     }
 
