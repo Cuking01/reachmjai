@@ -195,12 +195,12 @@ struct Trainer
         //     get_grad(base_batch_size,1);
         //     update(5*lr,1);
         // }
-        for(int i=0;i<300;i++)
-        {
-            f.zero_grad();
-            get_grad(base_batch_size,1);
-            update(1.5*lr,1);
-        }
+        // for(int i=0;i<300;i++)
+        // {
+        //     f.zero_grad();
+        //     get_grad(base_batch_size,1);
+        //     update(1.5*lr,1);
+        // }
         // for(int i=0;i<3000;i++)
         // {
         //     f.zero_grad();
