@@ -350,7 +350,7 @@ void test_multi()
     {
         trainer.emplace_back(target,range,f[i],input_size,output_size);
         printf("start to train %d\n",i);
-        trainer[i].train_simple(500,0.1,64);
+        trainer[i].train_simple(200,0.1,64);
     }
 
     torch::NoGradGuard no_grad;
