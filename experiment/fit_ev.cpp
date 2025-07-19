@@ -311,6 +311,16 @@ struct Trainer
                 k+=1;
             }
         }
+
+        //低学习率微调
+
+        for(int i=0;i<50;i++)
+        {
+            epoch_id++;
+            f.zero_grad();
+            float loss=get_grad(base_batch_size,k);
+            update(lr,k);
+        }
     }
 
 };
