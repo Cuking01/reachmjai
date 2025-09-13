@@ -50,91 +50,74 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
     return low + rand * (high - low);
 }
 
+torch::Tensor target_fun(const torch::Tensor& xys) {
 
-namespace check_rand
-{
-// 计算单个张量的方差
-double calculate_tensor_variance(const torch::Tensor& tensor) {
-    double variance = 0.0;
-    int num_elements = tensor.numel();
-    for (int i = 0; i < num_elements; ++i) {
-        double element = tensor.data_ptr<float>()[i];
-        variance += (element - 0.5) * (element - 0.5);
-    }
-    return variance / num_elements;
+    // 定义权重矩阵 W (2x2)
+    torch::Tensor W = torch::tensor({{0.5, -0.7}, {-0.8, 0.3}});
+
+    // 定义偏置 b (2x1)
+    torch::Tensor b = torch::tensor({-0.1, -0.1});
+
+    // 矩阵乘法: output = ReLU(W * input^T + b)
+    // xys 是 Nx2，转置后是 2xN，W 是 2x2，结果 W * xys^T 是 2xN
+    torch::Tensor linear_output = torch::mm(W, xys.t()) + b.unsqueeze(1);
+
+    // 转置回 Nx2 并应用 ReLU
+    torch::Tensor output = torch::relu(linear_output.t());
+
+    return output;
 }
 
-// 计算均值向量的方差
-double calculate_mean_variance(const std::vector<double>& means) {
-    double variance = 0.0;
-    for (double mean : means) {
-        variance += (mean - 0.5) * (mean - 0.5);
-    }
-    return variance / 10.0;
+torch::Tensor range_fun(const torch::Tensor& xys) {
+
+    // 定义权重矩阵 W (2x2)
+    torch::Tensor W = torch::tensor({{0.1, -0.2}, {-0.3, 0.0}});
+
+    // 定义偏置 b (2x1)
+    torch::Tensor b = torch::tensor({0.4, 0.4});
+
+    // 矩阵乘法: output = ReLU(W * input^T + b)
+    // xys 是 Nx2，转置后是 2xN，W 是 2x2，结果 W * xys^T 是 2xN
+    torch::Tensor linear_output = torch::mm(W, xys.t()) + b.unsqueeze(1);
+
+    // 转置回 Nx2 并应用 ReLU
+    torch::Tensor output = torch::relu(linear_output.t());
+
+    return output;
 }
 
-int main() {
-    // 生成一个 10x10 的张量，仅用于确定大小
-    torch::Tensor template_tensor = torch::ones({10, 10});
 
-    // 进行十次实验
-    for (int experiment = 0; experiment < 10; ++experiment) {
-        std::vector<double> means;
-        std::vector<double> tensor_variances;
-        std::vector<double> mean_deviations;
-        double total_sum = 0.0;
+template <typename T, typename = void>
+struct has_forward : std::false_type {};
 
-        // 每次实验生成 10 个张量
-        for (int i = 0; i < 10; ++i) {
-            torch::Tensor random_tensor = torch::rand_like(template_tensor);
-            // 计算当前张量的均值
-            double mean = random_tensor.mean().item<double>();
-            means.push_back(mean);
-            total_sum += mean;
+template <typename T>
+struct has_forward<T, std::void_t<decltype(std::declval<T>().forward(std::declval<torch::Tensor>()))>> 
+    : std::true_type {};
 
-            // 计算当前张量均值与期望值 0.5 的偏差
-            double deviation = mean - 0.5;
-            mean_deviations.push_back(deviation);
+// SFINAE-based dispatcher
+template <typename Functor>
+auto forward(Functor&& fun, torch::Tensor x) 
+    -> std::enable_if_t<has_forward<std::decay_t<Functor>>::value, torch::Tensor> {
+    return fun.forward(x);
+}
 
-            // 计算当前张量的方差
-            double tensor_variance = calculate_tensor_variance(random_tensor);
-            tensor_variances.push_back(tensor_variance);
+template <typename Functor>
+auto forward(Functor&& fun, torch::Tensor x) 
+    -> std::enable_if_t<!has_forward<std::decay_t<Functor>>::value, torch::Tensor> {
+    return fun(x);
+}
 
-            std::cout << "Experiment " << experiment + 1 << ", Tensor " << i + 1 << " Mean: " << mean
-                      << ", Variance: " << tensor_variance
-                      << ", Deviation from 0.5: " << deviation << std::endl;
-        }
-
-        // 计算 10 个张量总的均值
-        double total_mean = total_sum / 10.0;
-
-        // 计算 10 个张量总均值与期望值 0.5 的偏差
-        double total_deviation = total_mean - 0.5;
-
-        // 计算 10 个均值的方差
-        double mean_variance = calculate_mean_variance(means);
-
-        // 输出本次实验的均值方差、10 个张量总的均值以及对应的偏差
-        std::cout << "Experiment " << experiment + 1 << " Mean Variance: " << mean_variance
-                  << ", Total Mean of 10 Tensors: " << total_mean
-                  << ", Total Deviation from 0.5: " << total_deviation << std::endl;
-    }
-
-    return 0;
-}    
-};
-
-
+template<typename Target_T,typename Range_T>
 struct Trainer
 {
-    FCN&target;
-    FCN&range;
+    Target_T&target;
+    Range_T&range;
     FCN&f;
 
     int input_size;
     int output_size;
 
-    Trainer(FCN&target,FCN&range,FCN&f,int input_size,int output_size):
+    Trainer(Target_T&target,Range_T&range,FCN&f,int input_size,int output_size):
         target(target),range(range),f(f),input_size(input_size),output_size(output_size)
     {
 
@@ -147,8 +130,8 @@ struct Trainer
         for(int64_t i=0;i<k;i++)
         {
             torch::Tensor x = torch::rand({ base_batch_size, input_size });
-            torch::Tensor target_output = target.forward(x);
-            torch::Tensor range_output = range.forward(x);
+            torch::Tensor target_output = forward(target,x);;
+            torch::Tensor range_output = forward(range,x);;
 
             torch::Tensor sample = sample_from_range(target_output,range_output);  // 生成采样值
             torch::Tensor y=f.forward(x);
@@ -176,7 +159,7 @@ struct Trainer
         for(int64_t i=0;i<k;i++)
         {
             torch::Tensor x = torch::rand({ base_batch_size, input_size });
-            torch::Tensor target_output = target.forward(x);
+            torch::Tensor target_output = forward(target,x);
 
             torch::Tensor y=f.forward(x);
             torch::Tensor loss=mse(y,target_output);
@@ -326,15 +309,42 @@ struct Trainer
 };
 
 
+constexpr int test_B=1<<21;
+
+void calc_syd(torch::Tensor& yp,torch::Tensor& y,std::string name)
+{
+    torch::Tensor tmp=yp-y;
+    std::vector<float> ex,ey;
+    for(int i=0;i<test_B;i++)
+    {
+        ex.push_back(tmp[i][0].item<float>());
+        ey.push_back(tmp[i][1].item<float>());
+    }
+
+    std::sort(ex.begin(),ex.end());
+    std::sort(ey.begin(),ey.end());
+
+    printf("%s.ex:\n",name.c_str());
+    for(int i=0;i<15;i++)
+    {
+        printf("%.8f ",ex[test_B/15*i]);
+        if(i%4==3)puts("");
+    }
+    printf("%.8f\n\n",ex.back());
+
+    printf("%s.ey:\n",name.c_str());
+    for(int i=0;i<15;i++)
+    {
+        printf("%.8f ",ey[test_B/15*i]);
+        if(i%4==3)puts("");
+    }
+    printf("%.8f\n\n",ex.back());
+}
+
 void test_multi()
 {
     int input_size=2,output_size=2;
     float lr=0.15;
-
-    FCN target(input_size,2,output_size);
-    FCN range(input_size,2,output_size);
-    target.set_requires_grad_false();
-    range.set_requires_grad_false();
 
     std::vector<FCN> f;
 
@@ -344,29 +354,33 @@ void test_multi()
     }
 
 
-    std::vector<Trainer> trainer;
+    std::vector<decltype(Trainer(target_fun,range_fun,f[0],input_size,output_size))> trainer;
 
     for(int i=0;i<10;i++)
     {
-        trainer.emplace_back(target,range,f[i],input_size,output_size);
+        trainer.emplace_back(target_fun,range_fun,f[i],input_size,output_size);
         printf("start to train %d\n",i);
         trainer[i].train_simple(200,0.1,64);
     }
 
     torch::NoGradGuard no_grad;
 
-    torch::Tensor x=torch::rand({1<<21,input_size});
+    
+
+    torch::Tensor x=torch::rand({test_B,input_size});
 
     torch::nn::MSELoss mse;
-    torch::Tensor y=target.forward(x);
+    torch::Tensor y=target_fun(x);
 
     for(int i=0;i<10;i++)
     {
-        
         torch::Tensor yp=f[i].forward(x);
-
         torch::Tensor loss=mse(y,yp);
         printf("loss of f[%d]:%.8f\n",i,loss.item<float>());
+
+        std::string name="f["+std::to_string(i)+"]";
+
+        calc_syd(yp,y,name);
 
         //std::cout<<"f["<<i<<"]\n"<<yp-y;
 
@@ -383,7 +397,12 @@ void test_multi()
 
     torch::Tensor loss=mse(y,yp);
 
+    calc_syd(yp,y,"all");
+
     printf("loss of all=%.8f\n",loss.item<float>());
+
+
+
     //std::cout<<"f["<<"all"<<"]\n"<<yp-y;
 }
 
@@ -408,20 +427,6 @@ void test_one()
 
     Trainer trainer2(target,range,g,input_size,output_size);
     trainer2.train_simple(10000,0.1,64);
-}
-
-void test_train()
-{
-    int input_size=2,output_size=2;
-    float lr=0.1;
-
-    FCN target(input_size,2,output_size);
-    FCN range(input_size,2,output_size);
-    FCN f(input_size,16,output_size);
-
-    
-
-
 }
 
 int main()
