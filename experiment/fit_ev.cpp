@@ -53,25 +53,30 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
 torch::Tensor target_fun(const torch::Tensor& xys) {
 
     // 定义权重矩阵 W (2x2)
-    torch::Tensor W = torch::tensor({{0.5, -0.7}, {-0.8, 0.3}});
+    torch::Tensor W = torch::tensor({{0.8, -1.0}, {-0.8, 0.7}});
 
     // 定义偏置 b (2x1)
-    torch::Tensor b = torch::tensor({-0.1, -0.1});
+    torch::Tensor b = torch::tensor({-0.1, 0.1});
 
     // 矩阵乘法: output = ReLU(W * input^T + b)
     // xys 是 Nx2，转置后是 2xN，W 是 2x2，结果 W * xys^T 是 2xN
-    torch::Tensor linear_output = torch::mm(W, xys.t()) + b.unsqueeze(1);
+    torch::Tensor tmp = torch::mm(W, xys.t()) + b.unsqueeze(1);
 
     // 转置回 Nx2 并应用 ReLU
-    torch::Tensor output = torch::relu(linear_output.t());
+    tmp = torch::relu(tmp.t());
 
-    return output;
+    torch::Tensor W2 = torch::tensor({{0.3,-0.1},{0.8,-1.1}});
+    torch::Tensor b2 = torch::tensor({0.1,-0.1});
+
+    tmp=torch::mm(W2,tmp.t())+b2.unsqueeze(1);
+
+    return tmp.t();
 }
 
 torch::Tensor range_fun(const torch::Tensor& xys) {
 
     // 定义权重矩阵 W (2x2)
-    torch::Tensor W = torch::tensor({{0.1, -0.2}, {-0.3, 0.0}});
+    torch::Tensor W = torch::tensor({{0.3, -0.1}, {-0.3, 0.7}});
 
     // 定义偏置 b (2x1)
     torch::Tensor b = torch::tensor({0.4, 0.4});
@@ -314,17 +319,22 @@ constexpr int test_B=1<<21;
 void calc_syd(torch::Tensor& yp,torch::Tensor& y,std::string name)
 {
     torch::Tensor tmp=yp-y;
+    auto acc=tmp.accessor<float,2>();
     std::vector<float> ex,ey;
+    double sumex=0,sumey=0;
     for(int i=0;i<test_B;i++)
     {
-        ex.push_back(tmp[i][0].item<float>());
-        ey.push_back(tmp[i][1].item<float>());
+        ex.push_back(acc[i][0]);
+        sumex+=acc[i][0];
+        ey.push_back(acc[i][1]);
+        sumey+=acc[i][1];
     }
 
     std::sort(ex.begin(),ex.end());
     std::sort(ey.begin(),ey.end());
 
     printf("%s.ex:\n",name.c_str());
+    printf("sumex = %.8f\n",sumex);
     for(int i=0;i<15;i++)
     {
         printf("%.8f ",ex[test_B/15*i]);
@@ -333,12 +343,13 @@ void calc_syd(torch::Tensor& yp,torch::Tensor& y,std::string name)
     printf("%.8f\n\n",ex.back());
 
     printf("%s.ey:\n",name.c_str());
+    printf("sumey = %.8f\n",sumey);
     for(int i=0;i<15;i++)
     {
         printf("%.8f ",ey[test_B/15*i]);
         if(i%4==3)puts("");
     }
-    printf("%.8f\n\n",ex.back());
+    printf("%.8f\n\n",ey.back());
 }
 
 void test_multi()
@@ -365,7 +376,7 @@ void test_multi()
 
     torch::NoGradGuard no_grad;
 
-    
+    double sum_loss=0;
 
     torch::Tensor x=torch::rand({test_B,input_size});
 
@@ -376,6 +387,7 @@ void test_multi()
     {
         torch::Tensor yp=f[i].forward(x);
         torch::Tensor loss=mse(y,yp);
+        sum_loss+=loss.item<float>();
         printf("loss of f[%d]:%.8f\n",i,loss.item<float>());
 
         std::string name="f["+std::to_string(i)+"]";
@@ -399,6 +411,74 @@ void test_multi()
 
     calc_syd(yp,y,"all");
 
+    printf("sum of loss=%.8f\n",sum_loss);
+    printf("loss of all=%.8f\n",loss.item<float>());
+
+
+
+    //std::cout<<"f["<<"all"<<"]\n"<<yp-y;
+}
+
+void test_multi()
+{
+    int input_size=2,output_size=2;
+    float lr=0.15;
+
+    std::vector<FCN> f;
+
+    for(int i=0;i<10;i++)
+    {
+        f.emplace_back(input_size,16,output_size);
+    }
+
+
+    std::vector<decltype(Trainer(target_fun,range_fun,f[0],input_size,output_size))> trainer;
+
+    for(int i=0;i<10;i++)
+    {
+        trainer.emplace_back(target_fun,range_fun,f[i],input_size,output_size);
+        printf("start to train %d\n",i);
+        trainer[i].train_simple(200,0.1,64);
+    }
+
+    torch::NoGradGuard no_grad;
+
+    double sum_loss=0;
+
+    torch::Tensor x=torch::rand({test_B,input_size});
+
+    torch::nn::MSELoss mse;
+    torch::Tensor y=target_fun(x);
+
+    for(int i=0;i<10;i++)
+    {
+        torch::Tensor yp=f[i].forward(x);
+        torch::Tensor loss=mse(y,yp);
+        sum_loss+=loss.item<float>();
+        printf("loss of f[%d]:%.8f\n",i,loss.item<float>());
+
+        std::string name="f["+std::to_string(i)+"]";
+
+        calc_syd(yp,y,name);
+
+        //std::cout<<"f["<<i<<"]\n"<<yp-y;
+
+    }
+
+    torch::Tensor yp=f[0].forward(x);
+
+    for(int i=1;i<10;i++)
+    {
+        yp=yp+f[i].forward(x);
+    }
+
+    yp=0.1*yp;
+
+    torch::Tensor loss=mse(y,yp);
+
+    calc_syd(yp,y,"all");
+
+    printf("sum of loss=%.8f\n",sum_loss);
     printf("loss of all=%.8f\n",loss.item<float>());
 
 
@@ -432,5 +512,14 @@ void test_one()
 int main()
 {
     //check_rand::main();
-    test_multi();
+    int T;
+    scanf("%d",&T);
+    
+
+    torch::Tensor x=torch::tensor({{0.5,0.6}});
+    std::cout<< x.sizes() <<std::endl;
+    auto ans=target_fun(x);
+    printf("%f %f\n",ans[0][0].item<float>(),ans[0][1].item<float>());
+    while(T--)test_multi();
+
 }
