@@ -411,7 +411,7 @@ void test_multi()
 
     calc_syd(yp,y,"all");
 
-    printf("sum of loss=%.8f\n",sum_loss);
+    printf("avg of loss=%.8f\n",sum_loss/10);
     printf("loss of all=%.8f\n",loss.item<float>());
 
 
@@ -419,10 +419,15 @@ void test_multi()
     //std::cout<<"f["<<"all"<<"]\n"<<yp-y;
 }
 
-void test_multi()
+void test_multi2()
 {
     int input_size=2,output_size=2;
     float lr=0.15;
+
+    FCN target(input_size,2,output_size);
+    FCN range(input_size,2,output_size);
+    target.set_requires_grad_false();
+    range.set_requires_grad_false();
 
     std::vector<FCN> f;
 
@@ -432,35 +437,32 @@ void test_multi()
     }
 
 
-    std::vector<decltype(Trainer(target_fun,range_fun,f[0],input_size,output_size))> trainer;
+    std::vector<Trainer<FCN,FCN>> trainer;
 
     for(int i=0;i<10;i++)
     {
-        trainer.emplace_back(target_fun,range_fun,f[i],input_size,output_size);
+        trainer.emplace_back(target,range,f[i],input_size,output_size);
         printf("start to train %d\n",i);
         trainer[i].train_simple(200,0.1,64);
     }
 
     torch::NoGradGuard no_grad;
 
-    double sum_loss=0;
-
-    torch::Tensor x=torch::rand({test_B,input_size});
+    torch::Tensor x=torch::rand({1<<21,input_size});
 
     torch::nn::MSELoss mse;
-    torch::Tensor y=target_fun(x);
+    torch::Tensor y=target.forward(x);
+
+    double loss_sum=0;
 
     for(int i=0;i<10;i++)
     {
+        
         torch::Tensor yp=f[i].forward(x);
+
         torch::Tensor loss=mse(y,yp);
-        sum_loss+=loss.item<float>();
         printf("loss of f[%d]:%.8f\n",i,loss.item<float>());
-
-        std::string name="f["+std::to_string(i)+"]";
-
-        calc_syd(yp,y,name);
-
+        loss_sum+=loss.item<float>();
         //std::cout<<"f["<<i<<"]\n"<<yp-y;
 
     }
@@ -476,16 +478,10 @@ void test_multi()
 
     torch::Tensor loss=mse(y,yp);
 
-    calc_syd(yp,y,"all");
-
-    printf("sum of loss=%.8f\n",sum_loss);
+    printf("avg of loss=%.8f\n",loss_sum/10);
     printf("loss of all=%.8f\n",loss.item<float>());
-
-
-
     //std::cout<<"f["<<"all"<<"]\n"<<yp-y;
 }
-
 
 void test_one()
 {
@@ -515,11 +511,6 @@ int main()
     int T;
     scanf("%d",&T);
     
-
-    torch::Tensor x=torch::tensor({{0.5,0.6}});
-    std::cout<< x.sizes() <<std::endl;
-    auto ans=target_fun(x);
-    printf("%f %f\n",ans[0][0].item<float>(),ans[0][1].item<float>());
-    while(T--)test_multi();
+    while(T--)test_multi2();
 
 }
