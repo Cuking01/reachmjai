@@ -53,22 +53,24 @@ torch::Tensor sample_from_range(torch::Tensor target, torch::Tensor range) {
 torch::Tensor target_fun(const torch::Tensor& xys) {
 
     // 定义权重矩阵 W (2x2)
-    torch::Tensor W = torch::tensor({{0.8, -1.0}, {-0.8, 0.7}});
+    torch::Tensor W = torch::tensor({{1.0, 0.0}, {0.0, 1.0}});
 
     // 定义偏置 b (2x1)
     torch::Tensor b = torch::tensor({-0.1, 0.1});
 
     // 矩阵乘法: output = ReLU(W * input^T + b)
     // xys 是 Nx2，转置后是 2xN，W 是 2x2，结果 W * xys^T 是 2xN
-    torch::Tensor tmp = torch::mm(W, xys.t()) + b.unsqueeze(1);
+    torch::Tensor tmp = torch::mm(W, xys.t()) ;//+ b.unsqueeze(1);
 
     // 转置回 Nx2 并应用 ReLU
-    tmp = torch::relu(tmp.t());
+    //tmp = torch::relu(tmp.t());
+    tmp=tmp.t();
 
-    torch::Tensor W2 = torch::tensor({{0.3,-0.1},{0.8,-1.1}});
+    torch::Tensor W2 = torch::tensor({{1.0,0.0},{0.0,1.0}});
     torch::Tensor b2 = torch::tensor({0.1,-0.1});
 
-    tmp=torch::mm(W2,tmp.t())+b2.unsqueeze(1);
+    tmp=torch::mm(W2,tmp.t());//+b2.unsqueeze(1);
+
 
     return tmp.t();
 }
@@ -79,7 +81,7 @@ torch::Tensor range_fun(const torch::Tensor& xys) {
     torch::Tensor W = torch::tensor({{0.3, -0.1}, {-0.3, 0.7}});
 
     // 定义偏置 b (2x1)
-    torch::Tensor b = torch::tensor({0.4, 0.4});
+    torch::Tensor b = torch::tensor({-1.4, -1.4});
 
     // 矩阵乘法: output = ReLU(W * input^T + b)
     // xys 是 Nx2，转置后是 2xN，W 是 2x2，结果 W * xys^T 是 2xN
@@ -135,8 +137,8 @@ struct Trainer
         for(int64_t i=0;i<k;i++)
         {
             torch::Tensor x = torch::rand({ base_batch_size, input_size });
-            torch::Tensor target_output = forward(target,x);;
-            torch::Tensor range_output = forward(range,x);;
+            torch::Tensor target_output = forward(target,x);
+            torch::Tensor range_output = forward(range,x);
 
             torch::Tensor sample = sample_from_range(target_output,range_output);  // 生成采样值
             torch::Tensor y=f.forward(x);
@@ -355,7 +357,7 @@ void calc_syd(torch::Tensor& yp,torch::Tensor& y,std::string name)
 void test_multi()
 {
     int input_size=2,output_size=2;
-    float lr=0.15;
+    float lr=0.10;
 
     std::vector<FCN> f;
 
@@ -363,7 +365,6 @@ void test_multi()
     {
         f.emplace_back(input_size,16,output_size);
     }
-
 
     std::vector<decltype(Trainer(target_fun,range_fun,f[0],input_size,output_size))> trainer;
 
@@ -392,7 +393,7 @@ void test_multi()
 
         std::string name="f["+std::to_string(i)+"]";
 
-        calc_syd(yp,y,name);
+        //calc_syd(yp,y,name);
 
         //std::cout<<"f["<<i<<"]\n"<<yp-y;
 
@@ -415,6 +416,17 @@ void test_multi()
     printf("loss of all=%.8f\n",loss.item<float>());
 
 
+    auto look_on_point=[&](torch::Tensor x)
+    {
+        printf("std out=");
+        std::cout<<target_fun(x);
+        puts("");
+
+
+
+        printf("avg out=");
+        
+    };
 
     //std::cout<<"f["<<"all"<<"]\n"<<yp-y;
 }
@@ -507,10 +519,17 @@ void test_one()
 
 int main()
 {
+    torch::Tensor x=torch::tensor({{1.0,2.0},{3.0,4.0}});
+    torch::Tensor E=target_fun(x);
+    torch::Tensor A=range_fun(x);
+    torch::Tensor X=sample_from_range(E,A);
+    std::cout<<E<<"\n";
+    std::cout<<A<<"\n";
+    std::cout<<X<<"\n";
     //check_rand::main();
     int T;
     scanf("%d",&T);
     
-    while(T--)test_multi2();
+    while(T--)test_multi();
 
 }

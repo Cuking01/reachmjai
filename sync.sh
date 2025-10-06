@@ -5,8 +5,8 @@ LOCAL_PATH="."                      # 本地要同步的文件夹
 REMOTE_USER="root"                  # 远程服务器用户名
 REMOTE_HOST="region-42.seetacloud.com"  # 远程服务器地址
 REMOTE_PATH="/root/reachjai"        # 远程目标路径
-PORT="51953"                        # SSH端口
-PASSWORD="eilO1ra7I7n4"                    # 密码（明文存储，仅用于学习环境）
+PORT="31078"                        # SSH端口
+PASSWORD="ndkMqC9o3UNj"                    # 密码（明文存储，仅用于学习环境）
 # -------------------------------
 
 # 检查依赖工具
